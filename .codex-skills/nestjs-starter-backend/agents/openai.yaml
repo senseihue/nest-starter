@@ -1,0 +1,7 @@
+interface:
+  display_name: "NestJS Starter Backend"
+  short_description: "Rules for this NestJS starter repo"
+  default_prompt: "Use $nestjs-starter-backend to follow this repository's backend architecture, auth patterns, and API contracts."
+
+policy:
+  allow_implicit_invocation: true

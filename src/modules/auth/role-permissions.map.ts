@@ -1,4 +1,4 @@
-import { PERMISSIONS, Permission } from './permissions';
+import { PERMISSIONS, Permission } from '@/modules/auth/permissions';
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   admin: [

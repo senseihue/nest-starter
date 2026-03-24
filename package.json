@@ -4,11 +4,15 @@
   "private": true,
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/main.js",
-    "dev": "ts-node src/main.ts",
+    "start": "node -r module-alias/register dist/main.js",
+    "dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
+  },
+  "_moduleAliases": {
+    "@": "dist",
+    "~": "dist"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.0",
@@ -21,6 +25,7 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "module-alias": "^2.2.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
@@ -33,6 +38,7 @@
     "@types/passport-jwt": "^4.0.1",
     "prisma": "^5.20.0",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.3"
   }
 }

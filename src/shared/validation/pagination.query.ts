@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { VALIDATION_MESSAGES } from './messages';
+import { VALIDATION_MESSAGES } from '@/shared/validation/messages';
 
 export class PaginationQuery {
   @ApiPropertyOptional({ example: 1 })

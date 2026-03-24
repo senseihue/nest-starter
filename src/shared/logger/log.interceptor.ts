@@ -2,8 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nes
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { AppLoggerService } from './app-logger.service';
-import { LOGGABLE_KEY, LoggableConfig } from './log.decorator';
+import { AppLoggerService } from '@/shared/logger/app-logger.service';
+import { LOGGABLE_KEY, LoggableConfig } from '@/shared/logger/log.decorator';
 
 @Injectable()
 export class LogInterceptor implements NestInterceptor {

@@ -1,34 +1,35 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ApiExtraModels, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedResponse, getSchemaPath } from '@nestjs/swagger';
-import { AuthService } from '../application/auth.service';
-import { LoginDto } from './login.dto';
-import { AppErrorResponseDto } from '../../../shared/exceptions/app-error.dto';
-import { Loggable } from '../../../shared/logger/log.decorator';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { AuthService } from '@/modules/auth/application/auth.service';
+import { ApiAuthErrorModel, ApiInvalidCredentialsError } from '@/modules/auth/interfaces/auth-api-docs.decorator';
+import { LoginDto } from '@/modules/auth/interfaces/login.dto';
+import { RegisterUserDto } from '@/modules/auth/interfaces/register-user.dto';
+import { Loggable } from '@/shared/logger/log.decorator';
 
 @ApiTags('auth')
-@ApiExtraModels(AppErrorResponseDto)
+@ApiAuthErrorModel()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Post('register')
+  @Loggable('Auth register')
+  @ApiOperation({ summary: 'Register user', description: 'Creates user with password' })
+  @ApiOkResponse({ description: 'Registered user' })
+  async register(@Body() dto: RegisterUserDto) {
+    const user = await this.authService.register(dto.id, dto.name, dto.email, dto.password);
+    return {
+      id: user.id,
+      name: user.getName(),
+      email: user.getEmail(),
+    };
+  }
 
   @Post('login')
   @Loggable('Auth login')
   @ApiOperation({ summary: 'Login', description: 'Returns JWT access token' })
   @ApiOkResponse({ description: 'JWT access token' })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid credentials',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Invalid credentials',
-        code: 'INVALID_CREDENTIALS',
-        path: '/api/auth/login',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiInvalidCredentialsError()
   async login(@Body() dto: LoginDto) {
     const user = await this.authService.validateUser(dto.email, dto.password);
     return this.authService.login(user);

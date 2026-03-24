@@ -1,10 +1,10 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './shared/exceptions/http-exception.filter';
-import { ResponseWrapperInterceptor } from './shared/interceptors/response-wrapper.interceptor';
-import { LogInterceptor } from './shared/logger/log.interceptor';
+import { AppModule } from '@/app.module';
+import { HttpExceptionFilter } from '@/shared/exceptions/http-exception.filter';
+import { ResponseWrapperInterceptor } from '@/shared/interceptors/response-wrapper.interceptor';
+import { LogInterceptor } from '@/shared/logger/log.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

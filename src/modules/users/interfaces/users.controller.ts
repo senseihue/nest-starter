@@ -1,34 +1,36 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
-  ApiExtraModels,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
-  ApiUnauthorizedResponse,
-  getSchemaPath,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { Permissions } from '../../auth/guards/permissions.decorator';
-import { PermissionsGuard } from '../../auth/guards/permissions.guard';
-import { AuthenticatedUser } from '../../auth/interfaces/authenticated-user.decorator';
-import { PERMISSIONS } from '../../auth/permissions';
-import { UsersService } from '../application/users.service';
-import { UserNotFoundException } from '../exceptions/user-not-found.exception';
-import { AppErrorResponseDto } from '../../../shared/exceptions/app-error.dto';
-import { buildPaginationMeta } from '../../../shared/interceptors/pagination-response';
-import { Loggable } from '../../../shared/logger/log.decorator';
-import { CreateUserDto } from './create-user.dto';
-import { ListUsersQuery } from './list-users.query';
-import { RegisterUserDto } from './register-user.dto';
-import { UpdateUserDto } from './update-user.dto';
-import { UpdateUserRolesDto } from './update-user-roles.dto';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { Permissions } from '@/modules/auth/guards/permissions.decorator';
+import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
+import { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.decorator';
+import { PERMISSIONS } from '@/modules/auth/permissions';
+import { UsersService } from '@/modules/users/application/users.service';
+import { UserNotFoundException } from '@/modules/users/exceptions/user-not-found.exception';
+import {
+  ApiUserNotFound,
+  ApiUsersDeletePermissionDenied,
+  ApiUsersErrorModel,
+  ApiUsersReadPermissionDenied,
+  ApiUsersRolesPermissionDenied,
+  ApiUsersUnauthorized,
+  ApiUsersWritePermissionDenied,
+} from '@/modules/users/interfaces/users-api-docs.decorator';
+import { CreateUserDto } from '@/modules/users/interfaces/create-user.dto';
+import { ListUsersQuery } from '@/modules/users/interfaces/list-users.query';
+import { UpdateUserDto } from '@/modules/users/interfaces/update-user.dto';
+import { UpdateUserRolesDto } from '@/modules/users/interfaces/update-user-roles.dto';
+import { buildPaginationMeta } from '@/shared/interceptors/pagination-response';
+import { Loggable } from '@/shared/logger/log.decorator';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@ApiExtraModels(AppErrorResponseDto)
+@ApiUsersErrorModel()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -45,52 +47,14 @@ export class UsersController {
     };
   }
 
-  @Post('register')
-  @ApiOperation({ summary: 'Register user', description: 'Creates user with password' })
-  @ApiOkResponse({ description: 'Registered user' })
-  async register(@Body() dto: RegisterUserDto) {
-    const user = await this.usersService.registerUser(dto.id, dto.name, dto.email, dto.password);
-    return {
-      id: user.id,
-      name: user.getName(),
-      email: user.getEmail(),
-    };
-  }
-
   @Get()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions(PERMISSIONS.USERS_READ)
   @Loggable('Users list')
   @ApiOperation({ summary: 'List users', description: 'Requires permission: users:read' })
   @ApiOkResponse({ description: 'List of users' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiForbiddenResponse({
-    description: 'Missing permission: users:read',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 403,
-        error: 'ForbiddenException',
-        message: 'Forbidden',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users')
+  @ApiUsersReadPermissionDenied()
   async list(@Query() query: ListUsersQuery) {
     const { items, total } = await this.usersService.listUsersPage(query.page, query.limit);
 
@@ -100,7 +64,7 @@ export class UsersController {
         name: user.getName(),
         email: user.getEmail(),
       })),
-      pagination: buildPaginationMeta(page, limit, total),
+      pagination: buildPaginationMeta(query.page, query.limit, total),
     };
   }
 
@@ -108,34 +72,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get user by id', description: 'Requires JWT' })
   @ApiOkResponse({ description: 'User details' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 404,
-        error: 'NotFoundException',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users/123')
+  @ApiUserNotFound('/api/users/123')
   async getById(@Param('id') id: string) {
     const user = await this.usersService.getUser(id);
     if (!user) {
@@ -154,48 +92,9 @@ export class UsersController {
   @Permissions(PERMISSIONS.USERS_WRITE)
   @ApiOperation({ summary: 'Update user', description: 'Requires permission: users:write' })
   @ApiOkResponse({ description: 'Updated user' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiForbiddenResponse({
-    description: 'Missing permission: users:write',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 403,
-        error: 'ForbiddenException',
-        message: 'Forbidden',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 404,
-        error: 'NotFoundException',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users/123')
+  @ApiUsersWritePermissionDenied()
+  @ApiUserNotFound('/api/users/123')
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     const updated = await this.usersService.updateUser(id, dto);
     if (!updated) {
@@ -214,48 +113,9 @@ export class UsersController {
   @Permissions(PERMISSIONS.USERS_ROLES)
   @ApiOperation({ summary: 'Update user roles', description: 'Requires permission: users:roles' })
   @ApiOkResponse({ description: 'Updated user roles' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123/roles',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiForbiddenResponse({
-    description: 'Missing permission: users:roles',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 403,
-        error: 'ForbiddenException',
-        message: 'Forbidden',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123/roles',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 404,
-        error: 'NotFoundException',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND',
-        path: '/api/users/123/roles',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users/123/roles')
+  @ApiUsersRolesPermissionDenied()
+  @ApiUserNotFound('/api/users/123/roles')
   async updateRoles(@Param('id') id: string, @Body() dto: UpdateUserRolesDto) {
     const updated = await this.usersService.updateUserRoles(id, dto.roles);
     if (!updated) {
@@ -275,48 +135,9 @@ export class UsersController {
   @Permissions(PERMISSIONS.USERS_DELETE)
   @ApiOperation({ summary: 'Remove user', description: 'Requires permission: users:delete' })
   @ApiOkResponse({ description: 'User removed' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiForbiddenResponse({
-    description: 'Missing permission: users:delete',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 403,
-        error: 'ForbiddenException',
-        message: 'Forbidden',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
-  @ApiNotFoundResponse({
-    description: 'User not found',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 404,
-        error: 'NotFoundException',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND',
-        path: '/api/users/123',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users/123')
+  @ApiUsersDeletePermissionDenied()
+  @ApiUserNotFound('/api/users/123')
   async remove(@Param('id') id: string) {
     const removed = await this.usersService.removeUser(id);
     if (!removed) {
@@ -330,20 +151,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user profile', description: 'Requires JWT' })
   @ApiOkResponse({ description: 'Current user profile' })
-  @ApiUnauthorizedResponse({
-    description: 'Missing or invalid JWT',
-    schema: {
-      allOf: [{ $ref: getSchemaPath(AppErrorResponseDto) }],
-      example: {
-        statusCode: 401,
-        error: 'UnauthorizedException',
-        message: 'Unauthorized',
-        code: 'HTTP_EXCEPTION',
-        path: '/api/users/me/profile',
-        timestamp: '2026-03-17T10:20:00.000Z',
-      },
-    },
-  })
+  @ApiUsersUnauthorized('/api/users/me/profile')
   getProfile(
     @AuthenticatedUser()
     user: { userId: string; email: string; roles: string[]; permissions: string[] },

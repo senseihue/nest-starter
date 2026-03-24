@@ -1,17 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { InvalidCredentialsException } from '../exceptions/invalid-credentials.exception';
-import { AuthUser } from '../domain/auth-user';
-import { AuthRepository } from '../domain/auth.repository';
-import { AUTH_REPOSITORY } from '../auth.tokens';
-import { resolvePermissions } from '../role-permissions.map';
+import { AUTH_REPOSITORY } from '@/modules/auth/auth.tokens';
+import { AuthUser } from '@/modules/auth/domain/auth-user';
+import { AuthRepository } from '@/modules/auth/domain/auth.repository';
+import { InvalidCredentialsException } from '@/modules/auth/exceptions/invalid-credentials.exception';
+import { resolvePermissions } from '@/modules/auth/role-permissions.map';
+import { UsersService } from '@/modules/users/application/users.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(AUTH_REPOSITORY) private readonly authRepository: AuthRepository,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<AuthUser> {
@@ -40,5 +42,9 @@ export class AuthService {
     return {
       accessToken: await this.jwtService.signAsync(payload),
     };
+  }
+
+  async register(id: string, name: string, email: string, password: string) {
+    return this.usersService.registerUser(id, name, email, password);
   }
 }
