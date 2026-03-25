@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const bcrypt = require("bcrypt");
+const users_constants_1 = require("../users.constants");
 const user_entity_1 = require("../domain/user.entity");
 const users_tokens_1 = require("../users.tokens");
 let UsersService = class UsersService {
@@ -26,9 +27,9 @@ let UsersService = class UsersService {
         await this.userRepository.save(user);
         return user;
     }
-    async registerUser(id, name, email, password, roles = []) {
+    async registerUser(id, name, email, password, roles = users_constants_1.USERS_EMPTY_ROLES) {
         const user = new user_entity_1.User(id, name, email);
-        const passwordHash = await bcrypt.hash(password, 12);
+        const passwordHash = await bcrypt.hash(password, users_constants_1.USERS_DEFAULTS.PASSWORD_HASH_ROUNDS);
         await this.userRepository.createWithPassword(user, passwordHash, roles);
         return user;
     }

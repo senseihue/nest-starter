@@ -26,3 +26,10 @@ export function ApiInvalidCredentialsError() {
     schema: buildUnauthorizedSchema('/api/auth/login', 'Invalid credentials', 'INVALID_CREDENTIALS'),
   });
 }
+
+export function ApiInvalidAccessTokenError() {
+  return ApiUnauthorizedResponse({
+    description: 'Missing, invalid, expired, or revoked access token',
+    schema: buildUnauthorizedSchema('/api/auth/logout', 'Unauthorized'),
+  });
+}

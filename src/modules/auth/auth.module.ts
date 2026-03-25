@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthService } from '@/modules/auth/application/auth.service';
+import { AUTH_DEFAULTS } from '@/modules/auth/auth.constants';
 import { AUTH_REPOSITORY } from '@/modules/auth/auth.tokens';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import { RolesGuard } from '@/modules/auth/guards/roles.guard';
@@ -14,7 +15,7 @@ import { UsersModule } from '@/modules/users/users.module';
     UsersModule,
     JwtModule.register({
       secret: process.env.JWT_ACCESS_SECRET || 'dev_secret',
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: AUTH_DEFAULTS.ACCESS_TOKEN_EXPIRES_IN },
     }),
   ],
   controllers: [AuthController],

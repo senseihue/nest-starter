@@ -13,26 +13,44 @@ exports.JwtStrategy = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
+const auth_constants_1 = require("../auth.constants");
+const auth_service_1 = require("../application/auth.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
-    constructor() {
+    constructor(authService) {
         super({
+            passReqToCallback: true,
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: process.env.JWT_ACCESS_SECRET || 'dev_secret',
         });
+        this.authService = authService;
     }
-    async validate(payload) {
+    async validate(request, payload) {
+        const accessToken = passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+        const tokenId = payload[auth_constants_1.AUTH_TOKEN_PAYLOAD_KEYS.TOKEN_ID];
+        if (!accessToken || !tokenId) {
+            throw new common_1.UnauthorizedException();
+        }
+        const isValid = await this.authService.validateAccessToken({
+            tokenId,
+            userId: payload[auth_constants_1.AUTH_TOKEN_PAYLOAD_KEYS.SUBJECT],
+            accessToken,
+        });
+        if (!isValid) {
+            throw new common_1.UnauthorizedException();
+        }
         return {
-            userId: payload.sub,
+            userId: payload[auth_constants_1.AUTH_TOKEN_PAYLOAD_KEYS.SUBJECT],
             email: payload.email,
             roles: payload.roles,
             permissions: payload.permissions,
+            tokenId,
         };
     }
 };
 exports.JwtStrategy = JwtStrategy;
 exports.JwtStrategy = JwtStrategy = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [auth_service_1.AuthService])
 ], JwtStrategy);
 //# sourceMappingURL=jwt.strategy.js.map

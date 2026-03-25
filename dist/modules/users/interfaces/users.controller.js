@@ -21,13 +21,15 @@ const permissions_guard_1 = require("../../auth/guards/permissions.guard");
 const authenticated_user_decorator_1 = require("../../auth/interfaces/authenticated-user.decorator");
 const permissions_1 = require("../../auth/permissions");
 const users_service_1 = require("../application/users.service");
+const users_constants_1 = require("../users.constants");
 const user_not_found_exception_1 = require("../exceptions/user-not-found.exception");
 const users_api_docs_decorator_1 = require("./users-api-docs.decorator");
 const create_user_dto_1 = require("./create-user.dto");
 const list_users_query_1 = require("./list-users.query");
+const users_presenter_1 = require("./users.presenter");
 const update_user_dto_1 = require("./update-user.dto");
 const update_user_roles_dto_1 = require("./update-user-roles.dto");
-const pagination_response_1 = require("../../../shared/interceptors/pagination-response");
+const users_log_events_1 = require("../users-log-events");
 const log_decorator_1 = require("../../../shared/logger/log.decorator");
 let UsersController = class UsersController {
     constructor(usersService) {
@@ -35,65 +37,41 @@ let UsersController = class UsersController {
     }
     async create(dto) {
         const user = await this.usersService.createUser(dto.id, dto.name, dto.email);
-        return {
-            id: user.id,
-            name: user.getName(),
-            email: user.getEmail(),
-        };
+        return (0, users_presenter_1.toUserResponse)(user);
     }
     async list(query) {
-        const page = query.page ?? 1;
-        const limit = query.limit ?? 20;
+        const page = query.page ?? users_constants_1.USERS_DEFAULTS.PAGE;
+        const limit = query.limit ?? users_constants_1.USERS_DEFAULTS.LIMIT;
         const { items, total } = await this.usersService.listUsersPage(page, limit);
-        return {
-            items: items.map((user) => ({
-                id: user.id,
-                name: user.getName(),
-                email: user.getEmail(),
-            })),
-            pagination: (0, pagination_response_1.buildPaginationMeta)(page, limit, total),
-        };
+        return (0, users_presenter_1.toUsersPageResponse)(items, page, limit, total);
     }
     async getById(id) {
         const user = await this.usersService.getUser(id);
         if (!user) {
             throw new user_not_found_exception_1.UserNotFoundException();
         }
-        return {
-            id: user.id,
-            name: user.getName(),
-            email: user.getEmail(),
-        };
+        return (0, users_presenter_1.toUserResponse)(user);
     }
     async update(id, dto) {
         const updated = await this.usersService.updateUser(id, dto);
         if (!updated) {
             throw new user_not_found_exception_1.UserNotFoundException();
         }
-        return {
-            id: updated.id,
-            name: updated.getName(),
-            email: updated.getEmail(),
-        };
+        return (0, users_presenter_1.toUserResponse)(updated);
     }
     async updateRoles(id, dto) {
         const updated = await this.usersService.updateUserRoles(id, dto.roles);
         if (!updated) {
             throw new user_not_found_exception_1.UserNotFoundException();
         }
-        return {
-            id: updated.id,
-            name: updated.getName(),
-            email: updated.getEmail(),
-            roles: dto.roles,
-        };
+        return (0, users_presenter_1.toUserRolesResponse)(updated, dto.roles);
     }
     async remove(id) {
         const removed = await this.usersService.removeUser(id);
         if (!removed) {
             throw new user_not_found_exception_1.UserNotFoundException();
         }
-        return { success: true };
+        return (0, users_presenter_1.toRemoveUserResponse)();
     }
     getProfile(user) {
         return user;
@@ -102,8 +80,11 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, common_1.Post)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Create user (no password)', description: 'No auth required' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Created user' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.CREATE,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.CREATE,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.CREATE }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [create_user_dto_1.CreateUserDto]),
@@ -113,9 +94,12 @@ __decorate([
     (0, common_1.Get)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)(permissions_1.PERMISSIONS.USERS_READ),
-    (0, log_decorator_1.Loggable)('Users list'),
-    (0, swagger_1.ApiOperation)({ summary: 'List users', description: 'Requires permission: users:read' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'List of users' }),
+    (0, log_decorator_1.Loggable)(users_log_events_1.USERS_LOG_EVENTS.LIST),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.LIST,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.LIST,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.LIST }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users'),
     (0, users_api_docs_decorator_1.ApiUsersReadPermissionDenied)(),
     __param(0, (0, common_1.Query)()),
@@ -124,10 +108,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "list", null);
 __decorate([
-    (0, common_1.Get)(':id'),
+    (0, common_1.Get)(users_constants_1.USERS_ROUTES.DETAIL),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Get user by id', description: 'Requires JWT' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'User details' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.GET_BY_ID,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.GET_BY_ID,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.GET_BY_ID }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users/123'),
     (0, users_api_docs_decorator_1.ApiUserNotFound)('/api/users/123'),
     __param(0, (0, common_1.Param)('id')),
@@ -136,11 +123,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getById", null);
 __decorate([
-    (0, common_1.Patch)(':id'),
+    (0, common_1.Patch)(users_constants_1.USERS_ROUTES.DETAIL),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)(permissions_1.PERMISSIONS.USERS_WRITE),
-    (0, swagger_1.ApiOperation)({ summary: 'Update user', description: 'Requires permission: users:write' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Updated user' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.UPDATE,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.UPDATE,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.UPDATE }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users/123'),
     (0, users_api_docs_decorator_1.ApiUsersWritePermissionDenied)(),
     (0, users_api_docs_decorator_1.ApiUserNotFound)('/api/users/123'),
@@ -151,11 +141,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "update", null);
 __decorate([
-    (0, common_1.Patch)(':id/roles'),
+    (0, common_1.Patch)(users_constants_1.USERS_ROUTES.ROLES),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)(permissions_1.PERMISSIONS.USERS_ROLES),
-    (0, swagger_1.ApiOperation)({ summary: 'Update user roles', description: 'Requires permission: users:roles' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Updated user roles' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.UPDATE_ROLES,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.UPDATE_ROLES,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.UPDATE_ROLES }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users/123/roles'),
     (0, users_api_docs_decorator_1.ApiUsersRolesPermissionDenied)(),
     (0, users_api_docs_decorator_1.ApiUserNotFound)('/api/users/123/roles'),
@@ -166,11 +159,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateRoles", null);
 __decorate([
-    (0, common_1.Delete)(':id'),
+    (0, common_1.Delete)(users_constants_1.USERS_ROUTES.DETAIL),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_decorator_1.Permissions)(permissions_1.PERMISSIONS.USERS_DELETE),
-    (0, swagger_1.ApiOperation)({ summary: 'Remove user', description: 'Requires permission: users:delete' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'User removed' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.REMOVE,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.REMOVE,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.REMOVE }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users/123'),
     (0, users_api_docs_decorator_1.ApiUsersDeletePermissionDenied)(),
     (0, users_api_docs_decorator_1.ApiUserNotFound)('/api/users/123'),
@@ -180,10 +176,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "remove", null);
 __decorate([
-    (0, common_1.Get)('me/profile'),
+    (0, common_1.Get)(users_constants_1.USERS_ROUTES.PROFILE),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: 'Get current user profile', description: 'Requires JWT' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Current user profile' }),
+    (0, swagger_1.ApiOperation)({
+        summary: users_constants_1.USERS_OPERATION_SUMMARIES.GET_PROFILE,
+        description: users_constants_1.USERS_OPERATION_DESCRIPTIONS.GET_PROFILE,
+    }),
+    (0, swagger_1.ApiOkResponse)({ description: users_constants_1.USERS_RESPONSE_DESCRIPTIONS.GET_PROFILE }),
     (0, users_api_docs_decorator_1.ApiUsersUnauthorized)('/api/users/me/profile'),
     __param(0, (0, authenticated_user_decorator_1.AuthenticatedUser)()),
     __metadata("design:type", Function),
@@ -191,10 +190,10 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "getProfile", null);
 exports.UsersController = UsersController = __decorate([
-    (0, swagger_1.ApiTags)('users'),
+    (0, swagger_1.ApiTags)(users_constants_1.USERS_CONTROLLER_TAG),
     (0, swagger_1.ApiBearerAuth)(),
     (0, users_api_docs_decorator_1.ApiUsersErrorModel)(),
-    (0, common_1.Controller)('users'),
+    (0, common_1.Controller)(users_constants_1.USERS_CONTROLLER_BASE_PATH),
     __metadata("design:paramtypes", [users_service_1.UsersService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

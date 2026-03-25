@@ -9,8 +9,18 @@ import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { Permissions } from '@/modules/auth/guards/permissions.decorator';
 import { PermissionsGuard } from '@/modules/auth/guards/permissions.guard';
 import { AuthenticatedUser } from '@/modules/auth/interfaces/authenticated-user.decorator';
+import { AuthSessionUser } from '@/modules/auth/interfaces/auth-session-user';
 import { PERMISSIONS } from '@/modules/auth/permissions';
 import { UsersService } from '@/modules/users/application/users.service';
+import {
+  USERS_CONTROLLER_BASE_PATH,
+  USERS_CONTROLLER_TAG,
+  USERS_DEFAULTS,
+  USERS_OPERATION_DESCRIPTIONS,
+  USERS_OPERATION_SUMMARIES,
+  USERS_RESPONSE_DESCRIPTIONS,
+  USERS_ROUTES,
+} from '@/modules/users/users.constants';
 import { UserNotFoundException } from '@/modules/users/exceptions/user-not-found.exception';
 import {
   ApiUserNotFound,
@@ -23,57 +33,61 @@ import {
 } from '@/modules/users/interfaces/users-api-docs.decorator';
 import { CreateUserDto } from '@/modules/users/interfaces/create-user.dto';
 import { ListUsersQuery } from '@/modules/users/interfaces/list-users.query';
+import {
+  toRemoveUserResponse,
+  toUserResponse,
+  toUserRolesResponse,
+  toUsersPageResponse,
+} from '@/modules/users/interfaces/users.presenter';
 import { UpdateUserDto } from '@/modules/users/interfaces/update-user.dto';
 import { UpdateUserRolesDto } from '@/modules/users/interfaces/update-user-roles.dto';
-import { buildPaginationMeta } from '@/shared/interceptors/pagination-response';
+import { USERS_LOG_EVENTS } from '@/modules/users/users-log-events';
 import { Loggable } from '@/shared/logger/log.decorator';
 
-@ApiTags('users')
+@ApiTags(USERS_CONTROLLER_TAG)
 @ApiBearerAuth()
 @ApiUsersErrorModel()
-@Controller('users')
+@Controller(USERS_CONTROLLER_BASE_PATH)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create user (no password)', description: 'No auth required' })
-  @ApiOkResponse({ description: 'Created user' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.CREATE,
+    description: USERS_OPERATION_DESCRIPTIONS.CREATE,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.CREATE })
   async create(@Body() dto: CreateUserDto) {
     const user = await this.usersService.createUser(dto.id, dto.name, dto.email);
-    return {
-      id: user.id,
-      name: user.getName(),
-      email: user.getEmail(),
-    };
+    return toUserResponse(user);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions(PERMISSIONS.USERS_READ)
-  @Loggable('Users list')
-  @ApiOperation({ summary: 'List users', description: 'Requires permission: users:read' })
-  @ApiOkResponse({ description: 'List of users' })
+  @Loggable(USERS_LOG_EVENTS.LIST)
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.LIST,
+    description: USERS_OPERATION_DESCRIPTIONS.LIST,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.LIST })
   @ApiUsersUnauthorized('/api/users')
   @ApiUsersReadPermissionDenied()
   async list(@Query() query: ListUsersQuery) {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const page = query.page ?? USERS_DEFAULTS.PAGE;
+    const limit = query.limit ?? USERS_DEFAULTS.LIMIT;
     const { items, total } = await this.usersService.listUsersPage(page, limit);
 
-    return {
-      items: items.map((user) => ({
-        id: user.id,
-        name: user.getName(),
-        email: user.getEmail(),
-      })),
-      pagination: buildPaginationMeta(page, limit, total),
-    };
+    return toUsersPageResponse(items, page, limit, total);
   }
 
-  @Get(':id')
+  @Get(USERS_ROUTES.DETAIL)
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get user by id', description: 'Requires JWT' })
-  @ApiOkResponse({ description: 'User details' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.GET_BY_ID,
+    description: USERS_OPERATION_DESCRIPTIONS.GET_BY_ID,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.GET_BY_ID })
   @ApiUsersUnauthorized('/api/users/123')
   @ApiUserNotFound('/api/users/123')
   async getById(@Param('id') id: string) {
@@ -82,18 +96,17 @@ export class UsersController {
       throw new UserNotFoundException();
     }
 
-    return {
-      id: user.id,
-      name: user.getName(),
-      email: user.getEmail(),
-    };
+    return toUserResponse(user);
   }
 
-  @Patch(':id')
+  @Patch(USERS_ROUTES.DETAIL)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions(PERMISSIONS.USERS_WRITE)
-  @ApiOperation({ summary: 'Update user', description: 'Requires permission: users:write' })
-  @ApiOkResponse({ description: 'Updated user' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.UPDATE,
+    description: USERS_OPERATION_DESCRIPTIONS.UPDATE,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.UPDATE })
   @ApiUsersUnauthorized('/api/users/123')
   @ApiUsersWritePermissionDenied()
   @ApiUserNotFound('/api/users/123')
@@ -103,18 +116,17 @@ export class UsersController {
       throw new UserNotFoundException();
     }
 
-    return {
-      id: updated.id,
-      name: updated.getName(),
-      email: updated.getEmail(),
-    };
+    return toUserResponse(updated);
   }
 
-  @Patch(':id/roles')
+  @Patch(USERS_ROUTES.ROLES)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions(PERMISSIONS.USERS_ROLES)
-  @ApiOperation({ summary: 'Update user roles', description: 'Requires permission: users:roles' })
-  @ApiOkResponse({ description: 'Updated user roles' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.UPDATE_ROLES,
+    description: USERS_OPERATION_DESCRIPTIONS.UPDATE_ROLES,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.UPDATE_ROLES })
   @ApiUsersUnauthorized('/api/users/123/roles')
   @ApiUsersRolesPermissionDenied()
   @ApiUserNotFound('/api/users/123/roles')
@@ -124,19 +136,17 @@ export class UsersController {
       throw new UserNotFoundException();
     }
 
-    return {
-      id: updated.id,
-      name: updated.getName(),
-      email: updated.getEmail(),
-      roles: dto.roles,
-    };
+    return toUserRolesResponse(updated, dto.roles);
   }
 
-  @Delete(':id')
+  @Delete(USERS_ROUTES.DETAIL)
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions(PERMISSIONS.USERS_DELETE)
-  @ApiOperation({ summary: 'Remove user', description: 'Requires permission: users:delete' })
-  @ApiOkResponse({ description: 'User removed' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.REMOVE,
+    description: USERS_OPERATION_DESCRIPTIONS.REMOVE,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.REMOVE })
   @ApiUsersUnauthorized('/api/users/123')
   @ApiUsersDeletePermissionDenied()
   @ApiUserNotFound('/api/users/123')
@@ -146,17 +156,20 @@ export class UsersController {
       throw new UserNotFoundException();
     }
 
-    return { success: true };
+    return toRemoveUserResponse();
   }
 
-  @Get('me/profile')
+  @Get(USERS_ROUTES.PROFILE)
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Get current user profile', description: 'Requires JWT' })
-  @ApiOkResponse({ description: 'Current user profile' })
+  @ApiOperation({
+    summary: USERS_OPERATION_SUMMARIES.GET_PROFILE,
+    description: USERS_OPERATION_DESCRIPTIONS.GET_PROFILE,
+  })
+  @ApiOkResponse({ description: USERS_RESPONSE_DESCRIPTIONS.GET_PROFILE })
   @ApiUsersUnauthorized('/api/users/me/profile')
   getProfile(
     @AuthenticatedUser()
-    user: { userId: string; email: string; roles: string[]; permissions: string[] },
+    user: AuthSessionUser,
   ) {
     return user;
   }

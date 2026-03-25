@@ -12,28 +12,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
+const health_constants_1 = require("./health.constants");
 const health_api_docs_decorator_1 = require("./health-api-docs.decorator");
+const health_presenter_1 = require("./health.presenter");
 let HealthController = class HealthController {
     getStatus() {
-        return {
-            status: 'ok',
-            timestamp: new Date().toISOString(),
-        };
+        return (0, health_presenter_1.toHealthStatusResponse)();
     }
 };
 exports.HealthController = HealthController;
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Health check' }),
-    (0, swagger_1.ApiOkResponse)({ description: 'Service status' }),
+    (0, swagger_1.ApiOperation)({ summary: health_constants_1.HEALTH_OPERATION_SUMMARY }),
+    (0, swagger_1.ApiOkResponse)({ description: health_constants_1.HEALTH_RESPONSE_DESCRIPTION }),
     (0, health_api_docs_decorator_1.ApiHealthUnexpectedError)(),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], HealthController.prototype, "getStatus", null);
 exports.HealthController = HealthController = __decorate([
-    (0, swagger_1.ApiTags)('health'),
+    (0, swagger_1.ApiTags)(health_constants_1.HEALTH_CONTROLLER_TAG),
     (0, health_api_docs_decorator_1.ApiHealthErrorModel)(),
-    (0, common_1.Controller)('health')
+    (0, common_1.Controller)(health_constants_1.HEALTH_CONTROLLER_BASE_PATH)
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

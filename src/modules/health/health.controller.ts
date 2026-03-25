@@ -1,19 +1,23 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  HEALTH_CONTROLLER_BASE_PATH,
+  HEALTH_CONTROLLER_TAG,
+  HEALTH_OPERATION_SUMMARY,
+  HEALTH_RESPONSE_DESCRIPTION,
+} from '@/modules/health/health.constants';
 import { ApiHealthErrorModel, ApiHealthUnexpectedError } from '@/modules/health/health-api-docs.decorator';
+import { toHealthStatusResponse } from '@/modules/health/health.presenter';
 
-@ApiTags('health')
+@ApiTags(HEALTH_CONTROLLER_TAG)
 @ApiHealthErrorModel()
-@Controller('health')
+@Controller(HEALTH_CONTROLLER_BASE_PATH)
 export class HealthController {
   @Get()
-  @ApiOperation({ summary: 'Health check' })
-  @ApiOkResponse({ description: 'Service status' })
+  @ApiOperation({ summary: HEALTH_OPERATION_SUMMARY })
+  @ApiOkResponse({ description: HEALTH_RESPONSE_DESCRIPTION })
   @ApiHealthUnexpectedError()
   getStatus() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-    };
+    return toHealthStatusResponse();
   }
 }

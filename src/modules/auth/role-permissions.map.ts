@@ -1,6 +1,7 @@
 import { PERMISSIONS, Permission } from '@/modules/auth/permissions';
 
 export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  superadmin: Object.values(PERMISSIONS),
   admin: [
     PERMISSIONS.USERS_READ,
     PERMISSIONS.USERS_WRITE,

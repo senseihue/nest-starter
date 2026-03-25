@@ -4,6 +4,7 @@ exports.ROLE_PERMISSIONS = void 0;
 exports.resolvePermissions = resolvePermissions;
 const permissions_1 = require("./permissions");
 exports.ROLE_PERMISSIONS = {
+    superadmin: Object.values(permissions_1.PERMISSIONS),
     admin: [
         permissions_1.PERMISSIONS.USERS_READ,
         permissions_1.PERMISSIONS.USERS_WRITE,

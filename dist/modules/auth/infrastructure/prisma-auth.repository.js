@@ -29,6 +29,30 @@ let PrismaAuthRepository = class PrismaAuthRepository {
             passwordHash: record.passwordHash,
         };
     }
+    async createAccessToken(data) {
+        await this.prisma.authToken.create({
+            data,
+        });
+    }
+    async findValidAccessToken(data) {
+        return this.prisma.authToken.findFirst({
+            where: {
+                id: data.id,
+                userId: data.userId,
+                tokenHash: data.tokenHash,
+                revokedAt: null,
+                expiresAt: {
+                    gt: data.now,
+                },
+            },
+        });
+    }
+    async revokeAccessToken(id, revokedAt) {
+        await this.prisma.authToken.update({
+            where: { id },
+            data: { revokedAt },
+        });
+    }
 };
 exports.PrismaAuthRepository = PrismaAuthRepository;
 exports.PrismaAuthRepository = PrismaAuthRepository = __decorate([
