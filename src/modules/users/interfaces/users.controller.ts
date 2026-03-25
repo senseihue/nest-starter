@@ -56,7 +56,9 @@ export class UsersController {
   @ApiUsersUnauthorized('/api/users')
   @ApiUsersReadPermissionDenied()
   async list(@Query() query: ListUsersQuery) {
-    const { items, total } = await this.usersService.listUsersPage(query.page, query.limit);
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const { items, total } = await this.usersService.listUsersPage(page, limit);
 
     return {
       items: items.map((user) => ({
@@ -64,7 +66,7 @@ export class UsersController {
         name: user.getName(),
         email: user.getEmail(),
       })),
-      pagination: buildPaginationMeta(query.page, query.limit, total),
+      pagination: buildPaginationMeta(page, limit, total),
     };
   }
 

@@ -7,6 +7,8 @@ import { LOGGABLE_KEY, LoggableConfig } from '@/shared/logger/log.decorator';
 
 @Injectable()
 export class LogInterceptor implements NestInterceptor {
+  private readonly requestLoggingEnabled = process.env.REQUEST_LOGGING_ENABLED !== 'false';
+
   constructor(
     private readonly reflector: Reflector,
     private readonly logger: AppLoggerService,
@@ -18,7 +20,7 @@ export class LogInterceptor implements NestInterceptor {
       context.getClass(),
     ]);
 
-    if (!config) {
+    if (!config || !this.requestLoggingEnabled) {
       return next.handle();
     }
 

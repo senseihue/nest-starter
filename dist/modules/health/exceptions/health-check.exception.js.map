@@ -1,0 +1,1 @@
+{"version":3,"file":"health-check.exception.js","sourceRoot":"","sources":["../../../../src/modules/health/exceptions/health-check.exception.ts"],"names":[],"mappings":";;;AAAA,2CAA6D;AAE7D,MAAa,0BAA2B,SAAQ,oCAA2B;IACzE;QACE,KAAK,CAAC;YACJ,OAAO,EAAE,qBAAqB;YAC9B,IAAI,EAAE,qBAAqB;SAC5B,CAAC,CAAC;IACL,CAAC;CACF;AAPD,gEAOC"}

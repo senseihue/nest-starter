@@ -78,6 +78,8 @@ Reference: `references/repo-conventions.md`
 - Keep Prisma access in `infrastructure/` repositories or shared Prisma services.
 - Repository interfaces should return domain entities or simple application-friendly results, not raw Prisma records leaking across layers.
 - Update `prisma/schema.prisma` only when the feature truly changes persistence requirements.
+- Prefer explicit Prisma scripts in `package.json`, such as `prisma:generate`, `prisma:migrate:dev`, `prisma:migrate:deploy`, `prisma:push`, and `prisma:studio`.
+- Keep the Nest bootstrap and Prisma lifecycle aligned so application shutdown closes Prisma cleanly.
 
 ### 7. Swagger and Discoverability
 
@@ -106,6 +108,9 @@ Reference: `references/repo-conventions.md`
 
 - Preferred checks:
   `npm run build`
+- Type safety should be checked with `npm run typecheck` for backend changes that affect contracts, DTOs, services, modules, or imports.
+- For module-level changes, add or update a matching `*.spec.ts` test in that module whenever behavior changes.
+- After each completed task, run the most relevant verification commands, normally `npm run typecheck` and `npm run test`, and explicitly say if the environment prevented them.
 - If build tooling is unavailable, state that clearly and mention what could not be verified.
 - If you notice an existing unrelated issue in the touched area, do not silently revert it. Work around it or call it out.
 

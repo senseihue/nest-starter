@@ -5,9 +5,38 @@ import { AppModule } from '@/app.module';
 import { HttpExceptionFilter } from '@/shared/exceptions/http-exception.filter';
 import { ResponseWrapperInterceptor } from '@/shared/interceptors/response-wrapper.interceptor';
 import { LogInterceptor } from '@/shared/logger/log.interceptor';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+
+async function listenWithPortFallback(
+  app: Awaited<ReturnType<typeof NestFactory.create>>,
+  host: string,
+  preferredPort: number,
+  hasExplicitPort: boolean,
+) {
+  let port = preferredPort;
+
+  while (true) {
+    try {
+      await app.listen(port, host);
+      return port;
+    } catch (error) {
+      const listenError = error as NodeJS.ErrnoException;
+      if (listenError.code !== 'EADDRINUSE' || hasExplicitPort) {
+        throw error;
+      }
+
+      port += 1;
+    }
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.get(PrismaService);
+  app.enableShutdownHooks();
+  const hasExplicitPort = process.env.PORT !== undefined;
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '127.0.0.1';
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseWrapperInterceptor(), app.get(LogInterceptor));
@@ -48,7 +77,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, document);
 
-  await app.listen(3000);
+  await listenWithPortFallback(app, host, port, hasExplicitPort);
 }
 
 bootstrap();
