@@ -1,0 +1,1 @@
+export const BPMN_XML_EXPORTER = 'BPMN_XML_EXPORTER';

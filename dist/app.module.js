@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
+const bpmn_module_1 = require("./modules/bpmn/bpmn.module");
 const common_1 = require("@nestjs/common");
 const auth_module_1 = require("./modules/auth/auth.module");
 const health_module_1 = require("./modules/health/health.module");
@@ -18,7 +19,7 @@ let AppModule = class AppModule {
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, logger_module_1.LoggerModule, auth_module_1.AuthModule, health_module_1.HealthModule, users_module_1.UsersModule],
+        imports: [prisma_module_1.PrismaModule, logger_module_1.LoggerModule, auth_module_1.AuthModule, health_module_1.HealthModule, users_module_1.UsersModule, bpmn_module_1.BpmnModule],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

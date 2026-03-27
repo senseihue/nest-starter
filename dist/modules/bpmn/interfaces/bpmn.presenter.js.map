@@ -1,0 +1,1 @@
+{"version":3,"file":"bpmn.presenter.js","sourceRoot":"","sources":["../../../../src/modules/bpmn/interfaces/bpmn.presenter.ts"],"names":[],"mappings":";;AAEA,8CAKC;AAED,wCAEC;AAXD,sDAAwE;AAExE,SAAgB,iBAAiB,CAAC,GAAW;IAC3C,OAAO;QACL,MAAM,EAAE,wCAAuB,CAAC,MAAM;QACtC,GAAG;KACJ,CAAC;AACJ,CAAC;AAED,SAAgB,cAAc,CAAC,SAAiB;IAC9C,OAAO,GAAG,SAAS,GAAG,wCAAuB,CAAC,cAAc,EAAE,CAAC;AACjE,CAAC"}

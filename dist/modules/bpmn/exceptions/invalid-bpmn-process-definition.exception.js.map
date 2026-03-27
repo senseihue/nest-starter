@@ -1,0 +1,1 @@
+{"version":3,"file":"invalid-bpmn-process-definition.exception.js","sourceRoot":"","sources":["../../../../src/modules/bpmn/exceptions/invalid-bpmn-process-definition.exception.ts"],"names":[],"mappings":";;;AAAA,2CAAqD;AACrD,sDAAiE;AAEjE,MAAa,qCAAsC,SAAQ,4BAAmB;IAC5E,YAAY,OAAe;QACzB,KAAK,CAAC;YACJ,OAAO;YACP,IAAI,EAAE,iCAAgB,CAAC,0BAA0B;SAClD,CAAC,CAAC;IACL,CAAC;CACF;AAPD,sFAOC"}
